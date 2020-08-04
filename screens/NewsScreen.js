@@ -1,114 +1,123 @@
-import * as React from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, Linking, Image } from 'react-native';
+import React, { Component } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+  Linking,
+  Image,
+  SafeAreaView,
+  TouchableOpacity,
+  ScrollView
+} from 'react-native';
+import RNPickerSelect from 'react-native-picker-select';
 
+export default class NewsScreen extends Component {
+  constructor(props) {
+    super(props);
 
-export default class NewsScreen extends React.Component{
-
-  state = {
-      data: ''
-   }
-
-  componentDidMount = () => {
-      fetch('https://api.smartable.ai/coronavirus/news/global', {
-         method: 'GET',
-         headers: {'Subscription-Key': '3009d4ccc29e4808af1ccc25c69b4d5d'},
-      })
-      .then((response) => response.json())
-      .then((responseJson) => {
-         this.setState({
-            data: responseJson['news']
-         })
-      })
-      .catch((error) => {
-         console.error(error);
-      });
-   }
-
-  getAllNews = () => {
-
-    var newsLink = new Array();
-    var title = new Array();
-    var images = new Array();
-    var index = 0;
-
-    for (var i = 0; i < this.state.data.length; i++ ){
-      if ((this.state.data[i].ampWebUrl != null)
-      && (this.state.data[i].images != null)){
-        newsLink[index] = this.state.data[i].ampWebUrl;
-        title[index] = this.state.data[i].title;
-        images[index] = this.state.data[i].images[0].url;
-        index += 1
-      }
-
-      if (newsLink.length >= 5){
-        break;
-      }
-    }
-    
-    var data = [newsLink, title, images];
-    return data;
+    this.state = {
+      data: [],
+      isLoading: true,
+      country: null,
+    };
   }
 
-  render(){
 
-    var data = this.getAllNews();
-    var url = data[0];
-    var title = data[1];
-    var images = data[2];
+  componentDidMount() {
+    fetch('http://newsapi.org/v2/top-headlines?q=covid&from=2020-07-20&sortBy=relevancy&apiKey=2a96fe7bbd574064863297811141a0d2&pageSize=10&page=1')
+      .then((response) => response.json())
+      .then((json) => {
+        this.setState({ data: json.articles });
+      })
+      .catch((error) => console.error(error))
+      .finally(() => {
+        this.setState({ isLoading: false });
+      });
+  }
 
+
+  getAllCountries = () => {
+    var data = require('./../data/countries.json')
+    var countriesData = []
+
+    for (item in data){
+      countriesData.push({value: item, label: data[item]})
+    }
+
+    return countriesData
+  }
+
+
+  setUrl = (value) => {
+    this.setState({country: value})
+    var country = value;
+    fetch('http://newsapi.org/v2/top-headlines?q=covid&from=2020-07-20&sortBy=relevancy&apiKey=2a96fe7bbd574064863297811141a0d2&pageSize=50&page=1&country=' + country)
+      .then((response) => response.json())
+      .then((json) => {
+        this.setState({ data: json.articles });
+      })
+      .catch((error) => console.error(error))
+      .finally(() => {
+        this.setState({ isLoading: false });
+    });
+  }
+
+  checkImageUrl = (url) => {
+    if (url) {return url.toString(); }
+    else {return 'https://image.winudf.com/v2/image1/aHUuYmthbG1hbi5hbmRyb2lkLmFwcC53aGl0ZXNjcmVlbl9zY3JlZW5fMV8xNTY3MDI0NzUwXzAwMw/screen-1.jpg?fakeurl=1&type=.jpg';}
+  }
+
+
+  renderFooter() {
     return (
-      <View style = {{paddingTop: 50}}>
-      <Text style = {styles.title}>Latest News</Text>
-      <TouchableOpacity onPress={ ()=> Linking.openURL(data[0][0]) } style = {styles.rectangle}>
-      <View style = {{flexDirection: "row"}}>
-        <Text style = {styles.text}>{title[0]}</Text>
-        <Image
-        style = {styles.image}
-        source = {{uri: images[0]}}
-      />
-      </View>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={ ()=> Linking.openURL(data[0][1]) } style = {styles.rectangle}>
-      <View style = {{flexDirection: "row"}}>
-        <Text style = {styles.text}>{title[1]}</Text>
-        <Image
-        style = {styles.image}
-        source = {{uri: images[1]}}
-      />
-      </View>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={ ()=> Linking.openURL(data[0][2]) } style = {styles.rectangle}>
-      <View style = {{flexDirection: "row"}}>
-        <Text style = {styles.text}>{title[2]}</Text>
-        <Image
-        style = {styles.image}
-        source = {{uri: images[2]}}
-      />
-      </View>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={ ()=> Linking.openURL(data[0][3]) } style = {styles.rectangle}>
-      <View style = {{flexDirection: "row"}}>
-        <Text style = {styles.text}>{title[3]}</Text>
-        <Image
-        style = {styles.image}
-        source = {{uri: images[3]}}
-      />
-      </View>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={ ()=> Linking.openURL(data[0][4]) } style = {styles.rectangle}>
-      <View style = {{flexDirection: "row"}}>
-        <Text style = {styles.text}>{title[4]}</Text>
-        <Image
-        style = {styles.image}
-        source = {{uri: images[4]}}
-      />
-      </View>
-      </TouchableOpacity>
+      <View style={styles.footer}>
+        {this.state.fetching_from_server ? (
+          <ActivityIndicator color="black" style={{ margin: 15 }} />
+        ) : null}
       </View>
     );
   }
 
-}
+
+  render() {
+    var countryData = this.getAllCountries()
+    return (
+      <SafeAreaView>
+      <RNPickerSelect
+            onValueChange={(value) => this.setUrl(value)}
+            items = {countryData}
+            style = {pickerSelectStyles}
+            placeholder = {{label: "World"}}
+      />
+      <View style = {{paddingTop: 15, marginBottom: 200}}>
+      <Text style = {styles.title}>General News</Text>
+        {this.state.loading ? (
+          <ActivityIndicator size="large" />
+        ) : (
+          <FlatList
+            style={{ width: '100%' }}
+            keyExtractor={(item, index) => index.toString()}
+            data={this.state.data}
+            renderItem={({ item, index }) => (
+                <TouchableOpacity onPress={ ()=> Linking.openURL(item.url) } style = {styles.rectangle}>
+                <View style = {{flexDirection: "row"}}>
+                <Text style = {styles.text}>{item.title}</Text>
+                <Image style = {styles.image}
+                source = {{uri: this.checkImageUrl(item.urlToImage)}} />
+                </View>
+                </TouchableOpacity>
+            )}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            ListFooterComponent={this.renderFooter.bind(this)}
+          />
+        )}
+      </View>
+      </SafeAreaView>
+    );
+  }
+};
 
 const styles = StyleSheet.create({
 
@@ -116,19 +125,18 @@ const styles = StyleSheet.create({
     fontSize: 50,
     fontFamily:"Verdana",
     fontWeight: "bold",
-    paddingTop: 12,
     color: "#3b3433",
-    paddingLeft: 15,
+    paddingLeft: 12,
   },
 
   rectangle: {
-    height: 120,
+    height: 180,
     width: 390,
     marginTop: 10,
     marginLeft: 13,
     marginBottom: 5,
     borderRadius: 20,
-    backgroundColor: "#60a361",
+    backgroundColor: "#419bcc",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -141,9 +149,9 @@ const styles = StyleSheet.create({
 
   image:{
     height: 100,
-    width: 120,
-    marginTop:8,
-    marginRight: 10,
+    width: 150,
+    marginTop: 30,
+    marginRight: 13,
     marginBottom: 6,
     resizeMode: "contain"
   },
@@ -152,6 +160,21 @@ const styles = StyleSheet.create({
     padding: 20,
     color: "white",
     flex: 1,
-    fontSize: 16.5,
-  }
-})
+    fontSize: 19,
+    lineHeight: 26,
+    fontFamily: "Verdana"
+  },
+
+});
+
+const pickerSelectStyles = StyleSheet.create({
+    inputIOS: {
+        fontSize: 18,
+        paddingTop: 15,
+        fontWeight: "bold",
+        textAlign: "right",
+        paddingHorizontal: 15,
+        color: '#c96e06',
+        fontFamily: "Verdana"
+    },
+});

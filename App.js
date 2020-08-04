@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import CasesScreen from './screens/CasesScreen';
 import NewsScreen from './screens/NewsScreen';
+import VaccinesScreen from './screens/VaccinesScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -19,10 +20,13 @@ export default function App() {
 
           if (route.name === 'Cases') {
             iconName = focused
-              ? 'ios-globe'
-              : "ios-globe";
-          } else if (route.name === 'News') {
+              ? 'ios-trending-up'
+              : "ios-trending-up";
+          } else if (route.name === 'General News') {
             iconName = focused ? 'ios-list-box' : 'ios-list';
+          }
+          else if (route.name === 'Vaccine News') {
+            iconName = focused ? 'ios-information-circle' : 'ios-information-circle-outline';
           }
 
           // You can return any component that you like here!
@@ -37,7 +41,8 @@ export default function App() {
       }}
     >
         <Tab.Screen  name="Cases" component={CasesScreen} />
-        <Tab.Screen name="News" component={NewsScreen} />
+        <Tab.Screen name="General News" component={NewsScreen} />
+        <Tab.Screen name="Vaccine News" component={VaccinesScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );
